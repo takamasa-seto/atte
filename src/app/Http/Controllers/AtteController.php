@@ -17,6 +17,7 @@ class AtteController extends Controller
         if (0 == count($ongoing_attendances)) {
             return array(
                 'state' => "off",
+                'user_id' => $user_id,
                 'attendance_id' => null,
                 'rest_id' => null);
         }
@@ -25,17 +26,19 @@ class AtteController extends Controller
             if (count($ongoing_rests) > 0) {
                 return array(
                     'state' => "resting",
+                    'user_id' => $user_id,
                     'attendance_id' => $attendance->id,
                     'rest_id' => $ongoing_rests->first()->id);
             }
         }
         return array(
             'state' => "working",
+            'user_id' => $user_id,
             'attendance_id' => $ongoing_attendances->first()->id,
             'rest_id' => null);
     }
 
-    /* 日づけが異なるか判定する */
+    /* 日付が異なるか判定する */
     private function isAnotherDay(DateTime $start, DateTime $end)
     {
         $start_day = new DateTime($start->format('Y-m-d'));
@@ -49,18 +52,31 @@ class AtteController extends Controller
         }
     }
 
-    /* 勤務開始処理 */
-    private function startWork($user_id, $start_time)
+    /* 日付またぎ対応処理 */
+    private function checkDateChange($state, $now)
     {
-        $state = $this->getUserState($user_id);
+        if('off' != $state['state']) {
+            $attendance = Attendance::find($state['attendance_id']);
+            $start_time = new DateTime($attendance->start_time);
+            if ($this->isAnotherDay($start_time, $now)) {
+                $end_time = new DateTime($start_time->format('Y-m-d').' 23:59:59');
+                $this->endWork($state, $end_time);
+                $state = $this->getUserState($state['user_id']);
+            }
+        }
+        return $state;
+    }
+
+    /* 勤務開始処理 */
+    private function startWork($state, $start_time)
+    {
         if ('off' != $state['state']) return;
-        Attendance::addAttendance($user_id, $start_time);
+        Attendance::addAttendance($state['user_id'], $start_time);
     }
 
     /* 勤務終了処理 */
-    private function endWork($user_id, $end_time)
+    private function endWork($state, $end_time)
     {
-        $state = $this->getUserState($user_id);
         if (('working' != $state['state']) and ('resting' != $state['state'])) return;
         Attendance::find($state['attendance_id'])->update(['end_time' => $end_time]);
 
@@ -71,17 +87,15 @@ class AtteController extends Controller
     }
 
     /* 休憩開始　*/
-    private function startRest($user_id, $start_time)
+    private function startRest($state, $start_time)
     {
-        $state = $this->getUserState($user_id);
         if ('working' != $state['state']) return;
         Rest::addRest($state['attendance_id'], $start_time);
     }
 
     /* 休憩終了処理 */
-    private function endRest($user_id, $end_time)
+    private function endRest($state, $end_time)
     {
-        $state = $this->getUserState($user_id);
         if (('resting' != $state['state'])) return;
         Rest::find($state['rest_id'])->update(['end_time' => $end_time]);
     }
@@ -91,18 +105,9 @@ class AtteController extends Controller
     {
         if(Auth::check())
         {
+            $now = new DateTime();
             $state = $this->getUserState(Auth::user()->id);
-            /* 日付またぎ処理 */
-            if('off' != $state['state']) {
-                $now = new DateTime();
-                $attendance = Attendance::find($state['attendance_id']);
-                $start_time = new DateTime($attendance->start_time);
-                if ($this->isAnotherDay($start_time, $now)) {
-                    $end_time = new DateTime($start_time->format('Y-m-d').' 23:59:59');
-                    $this->endWork(Auth::user()->id, $end_time);
-                    $state = $this->getUserState(Auth::user()->id);
-                }
-            }
+            $state = $this->checkDateChange($state, $now);
             return view('stamp', ['user_state' => $this->getUserState(Auth::user()->id)['state']]);
         }
         else
@@ -117,24 +122,25 @@ class AtteController extends Controller
         if (Auth::check()) {
             $action = isset($request->change_state) ? $request->change_state : '';
             $now = new DateTime();
+            $state = $this->getUserState(Auth::user()->id);
+            $state = $this->checkDateChange($state, $now);
             switch ($action) {
                 case 'start_work':
-                    $this->startWork(Auth::user()->id, $now);
+                    $this->startWork($state, $now);
                     break;
                 case 'end_work':
-                    $this->endWork(Auth::user()->id, $now);
+                    $this->endWork($state, $now);
                     break;
                 case 'start_rest':
-                    $this->startRest(Auth::user()->id, $now);
+                    $this->startRest($state, $now);
                     break;
                 case 'end_rest':
-                    $this->endRest(Auth::user()->id, $now);
+                    $this->endRest($state, $now);
                     break;
             }
             return redirect('/');
         } else {
             return view('auth.login');
         }
-                
     }
 }
