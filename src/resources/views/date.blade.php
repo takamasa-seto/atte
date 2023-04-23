@@ -29,7 +29,9 @@
         </tr>
         @endforeach
       </table>
-      {{ $attendances->links() }}
+      <div class="mt-8 mb-12">
+        {{ $attendances->links('vendor.pagination.custom') }}
+      </div>
     </div>
     
   </div>
