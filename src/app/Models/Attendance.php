@@ -33,6 +33,13 @@ class Attendance extends Model
         $query->whereNull('end_time');
     }
 
+    public function scopeDateSearch($query, $date)
+    {
+        if(!empty($date)) {
+            $query->whereDate('start_time', $date);
+        }
+    }
+    
     public function addAttendance($user_id, $start_time, $end_time=null)
     {
         if(!empty($user_id) and !empty($start_time)) {

@@ -100,6 +100,26 @@ class AtteController extends Controller
         Rest::find($state['rest_id'])->update(['end_time' => $end_time]);
     }
 
+    /* 日付ごとの労働時間つきAttendanceテーブルの取得 */
+    private function getTimeWorkedTable($date)
+    {
+        $rests = Rest::whereNotNull('end_time')
+                 ->select('attendance_id')
+                 ->selectRaw('sec_to_time(SUM(time_to_sec(TIMEDIFF(end_time, start_time)))) AS total_break_time')
+                 ->groupBy('attendance_id');
+        $attendances = Attendance::with('user')
+                 ->DateSearch($date)
+                 ->whereNotNull('end_time')
+                 ->leftJoinSub($rests, 'rests', function($join){
+                        $join->on('id', '=', 'rests.attendance_id');
+                    })
+                 ->selectRaw('user_id,
+                              TIME(start_time) AS start_time,
+                              TIME(end_time) AS end_time,
+                              IFNULL(total_break_time, sec_to_time(0)) AS total_break_time, sec_to_time(time_to_sec(TIMEDIFF(end_time, start_time)) - IFNULL(time_to_sec(total_break_time), 0)) AS time_worked');
+        return $attendances;
+    }
+
     /* 打刻ページの表示 */
     public function create()
     {
@@ -142,5 +162,37 @@ class AtteController extends Controller
         } else {
             return view('auth.login');
         }
+    }
+
+    /* 日付一覧表示 */
+    public function show(Request $request)
+    {
+        if ($request->input('change_date') == 'prev') {
+            $date = new DateTime(session('date'));
+            $date->modify('-1 days');
+            session(['has_next' => true]);
+        }
+        elseif ($request->input('change_date') == 'next') {
+            $date = new DateTime(session('date'));
+            $date->modify('+1 days');
+            $now = new DateTime('now');
+            if (!$this->isAnotherDay($date, $now)) {
+                session(['has_next' => false]);
+            }
+        }
+        else {
+            if (!session()->has('date')) {
+                $date = new DateTime('now');
+                session(['has_next' => false]);
+            }
+            else {
+                $date = new DateTime(session('date'));
+            }
+        }
+        
+        $attendances = $this->getTimeWorkedTable($date)->Paginate(5);
+        session(['date' => $date->format('Y-m-d')]);
+        
+        return view('date', compact('attendances'));
     }
 }
