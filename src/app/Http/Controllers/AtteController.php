@@ -58,10 +58,23 @@ class AtteController extends Controller
         if('off' != $state['state']) {
             $attendance = Attendance::find($state['attendance_id']);
             $start_time = new DateTime($attendance->start_time);
-            if ($this->isAnotherDay($start_time, $now)) {
+            while ($this->isAnotherDay($start_time, $now)) {
+                /* stateが変更されるので休憩中か否かを保持 */
+                $is_resting = 'resting' == $state['state'] ? True : False; 
+                /* その日の仕事をいったん終了 */
                 $end_time = new DateTime($start_time->format('Y-m-d').' 23:59:59');
                 $this->endWork($state, $end_time);
                 $state = $this->getUserState($state['user_id']);
+                /* 次の日の仕事を開始 */
+                $start_time = new DateTime($start_time->format('Y-m-d'.' 00:00:00'));
+                $start_time->modify('+1 days');
+                $this->startWork($state, $start_time);
+                $state = $this->getUserState($state['user_id']);
+                /* 休憩中だった場合は休憩を開始 */
+                if( $is_resting ) {
+                    $this->startRest($state, $start_time);
+                    $state = $this->getUserState($state['user_id']);
+                }
             }
         }
         return $state;

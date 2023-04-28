@@ -9,7 +9,7 @@
     <!-- Buttons -->
     <form action="/" method="post">
       @csrf
-      <div class="grid grid-cols-2 gap-8 px-28 pb-28">
+      <div class="grid grid-cols-2 gap-8 px-12 sm:px-28 pb-12 sm:pb-28">
           <div>
             <x-stamp-button options="{{($user_state == 'off')?'enabled':'disabled'}}" name="change_state" value="start_work">
               勤務開始
