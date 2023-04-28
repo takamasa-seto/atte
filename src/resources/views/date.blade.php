@@ -11,7 +11,7 @@
     </form>
     <!-- AttendanceList -->
     <div>
-      <table class="w-11/12 table-fixed mx-auto">
+      <table class="w-11/12 table-fixed break-words mx-auto">
         <tr class="border-t border-black [&>th]:text-left [&>th]:p-4">
           <th>名前</th>
           <th>勤務開始</th>
