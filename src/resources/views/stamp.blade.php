@@ -1,7 +1,7 @@
 <x-app-layout>
   <div class="max-w-7xl mx-auto">  
     <!-- Message -->
-    <div class="flex items-center h-28">
+    <div class="flex items-center min-h-[7rem]">
       <p class="m-auto">
         {{ Auth::user()->name }}さんお疲れさまです！
       </p>

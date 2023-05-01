@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Auth;
 use App\Models\Attendance;
 use App\Models\Rest;
+use App\Models\User;
 use DateTime;
 
 class AtteController extends Controller
@@ -114,7 +115,7 @@ class AtteController extends Controller
     }
 
     /* 日付ごとの労働時間つきAttendanceテーブルの取得 */
-    private function getTimeWorkedTable($date)
+    private function getTimeWorkedTableEachDate($date)
     {
         $rests = Rest::whereNotNull('end_time')
                  ->select('attendance_id')
@@ -127,6 +128,26 @@ class AtteController extends Controller
                         $join->on('id', '=', 'rests.attendance_id');
                     })
                  ->selectRaw('user_id,
+                              TIME(start_time) AS start_time,
+                              TIME(end_time) AS end_time,
+                              IFNULL(total_break_time, sec_to_time(0)) AS total_break_time, sec_to_time(time_to_sec(TIMEDIFF(end_time, start_time)) - IFNULL(time_to_sec(total_break_time), 0)) AS time_worked');
+        return $attendances;
+    }
+
+    /* ユーザごとの労働時間つきAttendanceテーブルの取得 */
+    private function getTimeWorkedTableEachUser($user_id)
+    {
+        $rests = Rest::whereNotNull('end_time')
+                 ->select('attendance_id')
+                 ->selectRaw('sec_to_time(SUM(time_to_sec(TIMEDIFF(end_time, start_time)))) AS total_break_time')
+                 ->groupBy('attendance_id');
+        $attendances = Attendance::with('user')
+                 ->UserSearch($user_id)
+                 ->whereNotNull('end_time')
+                 ->leftJoinSub($rests, 'rests', function($join){
+                        $join->on('id', '=', 'rests.attendance_id');
+                    })
+                 ->selectRaw('CAST(start_time AS date) AS date,
                               TIME(start_time) AS start_time,
                               TIME(end_time) AS end_time,
                               IFNULL(total_break_time, sec_to_time(0)) AS total_break_time, sec_to_time(time_to_sec(TIMEDIFF(end_time, start_time)) - IFNULL(time_to_sec(total_break_time), 0)) AS time_worked');
@@ -203,9 +224,27 @@ class AtteController extends Controller
             }
         }
         
-        $attendances = $this->getTimeWorkedTable($date)->Paginate(5);
+        $attendances = $this->getTimeWorkedTableEachDate($date)->Paginate(5);
         session(['date' => $date->format('Y-m-d')]);
         
         return view('date', compact('attendances'));
+    }
+
+    /* ユーザ一覧表示 */
+    public function user_list()
+    {
+        $users = User::Paginate(5);
+        return view('user_list', compact('users'));
+    }
+
+    /* ユーザーごとに勤怠一覧表示 */
+    public function user_attendance(Request $request)
+    {
+        $user = User::find($request->input('user_id'));
+        if ( isset($user) ){
+            session(['user_name' => $user->name]);
+        }
+        $attendances = $this->getTimeWorkedTableEachUser($request->input('user_id'))->Paginate(5);
+        return view('user_attendance', compact('attendances'));
     }
 }

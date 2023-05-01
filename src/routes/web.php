@@ -18,6 +18,8 @@ Route::post('/', [AtteController::class, 'store']);
 Route::get('/register', function() { return view('auth.register'); });
 /* Route::get('/attendance', function() { return view('date'); }); */
 Route::get('/attendance', [AtteController::class, 'show']);
+Route::get('/user', [AtteController::class, 'user_list']);
+Route::get('/user_attendance', [AtteController::class, 'user_attendance']);
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');

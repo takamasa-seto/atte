@@ -14,9 +14,10 @@
             <!-- Settings Links -->
             <div class="flex items-center">
                 <ul class="flex">
-                    <li class="mr-8 last:mr-0"><a href="{{ url('/') }}">ホーム</a></li>
-                    <li class="mr-8 last:mr-0"><a href="{{ url('/attendance') }}">日付一覧</a></li>
-                    <li class="mr-8 last:mr-0">
+                    <li class="mr-2 sm:mr-8 last:mr-0"><a href="{{ url('/') }}">ホーム</a></li>
+                    <li class="mr-2 sm:mr-8 last:mr-0"><a href="{{ url('/attendance') }}">日付一覧</a></li>
+                    <li class="mr-2 sm:mr-8 last:mr-0"><a href="{{ url('/user') }}">ユーザー一覧</a></li>
+                    <li class="mr-2 sm:mr-8 last:mr-0">
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
