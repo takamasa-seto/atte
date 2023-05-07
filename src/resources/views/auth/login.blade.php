@@ -54,5 +54,8 @@
                 </x-button>
             </div>
         </form>
+        <div class="flex items-center justify-end mt-4">
+            <a class="underline" href="{{ url('/register') }}">新規登録はこちら</a>
+        </div>
     </x-auth-card>
 </x-guest-layout>
