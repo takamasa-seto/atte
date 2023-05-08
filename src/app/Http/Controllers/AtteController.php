@@ -157,17 +157,10 @@ class AtteController extends Controller
     /* 打刻ページの表示 */
     public function create()
     {
-        if(Auth::check())
-        {
-            $now = new DateTime();
-            $state = $this->getUserState(Auth::user()->id);
-            $state = $this->checkDateChange($state, $now);
-            return view('stamp', ['user_state' => $this->getUserState(Auth::user()->id)['state']]);
-        }
-        else
-        {
-            return view('auth.login');
-        }
+        $now = new DateTime();
+        $state = $this->getUserState(Auth::user()->id);
+        $state = $this->checkDateChange($state, $now);
+        return view('stamp', ['user_state' => $this->getUserState(Auth::user()->id)['state']]);
     }
 
     /* 打刻処理 */

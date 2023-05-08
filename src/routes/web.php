@@ -13,7 +13,7 @@ use App\Http\Controllers\AtteController;
 |
 */
 
-Route::get('/', [AtteController::class, 'create']);
+Route::get('/', [AtteController::class, 'create'])->middleware(['verified']);
 Route::post('/', [AtteController::class, 'store']);
 Route::get('/register', function() { return view('auth.register'); });
 /* Route::get('/attendance', function() { return view('date'); }); */
