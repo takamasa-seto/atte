@@ -694,9 +694,6 @@ select {
 .ml-4 {
   margin-left: 1rem;
 }
-.mr-0 {
-  margin-right: 0px;
-}
 .mr-2 {
   margin-right: 0.5rem;
 }
@@ -907,6 +904,9 @@ select {
 }
 .break-words {
   overflow-wrap: break-word;
+}
+.break-all {
+  word-break: break-all;
 }
 .rounded {
   border-radius: 0.25rem;
