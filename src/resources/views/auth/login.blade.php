@@ -55,7 +55,7 @@
             </div>
         </form>
         <div class="flex items-center justify-end mt-4">
-            <a class="underline" href="{{ route('register') }}">新規登録はこちら</a>
+            <a class="underline" href="{{ route('register') }}">{{ __('Register' )}}</a>
         </div>
     </x-auth-card>
 </x-guest-layout>
