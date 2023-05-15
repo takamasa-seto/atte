@@ -7,7 +7,7 @@ webアプリ開発の勉強のため
 
 ## アプリケーションURL
 * 開発(ローカル)環境  
-  http://localhost/
+  http:\//localhost
 * 本番(EC2)環境  
   <a href="http://ec2-18-182-45-97.ap-northeast-1.compute.amazonaws.com" target="_blank">http://ec2-18-182-45-97.ap-northeast-1.compute.amazonaws.com</a>
   
