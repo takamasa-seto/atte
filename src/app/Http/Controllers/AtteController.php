@@ -166,29 +166,25 @@ class AtteController extends Controller
     /* 打刻処理 */
     public function store(Request $request)
     {
-        if (Auth::check()) {
-            $action = isset($request->change_state) ? $request->change_state : '';
-            $now = new DateTime();
-            $state = $this->getUserState(Auth::user()->id);
-            $state = $this->checkDateChange($state, $now);
-            switch ($action) {
-                case 'start_work':
-                    $this->startWork($state, $now);
-                    break;
-                case 'end_work':
-                    $this->endWork($state, $now);
-                    break;
-                case 'start_rest':
-                    $this->startRest($state, $now);
-                    break;
-                case 'end_rest':
-                    $this->endRest($state, $now);
-                    break;
-            }
-            return redirect('/');
-        } else {
-            return view('auth.login');
+        $action = isset($request->change_state) ? $request->change_state : '';
+        $now = new DateTime();
+        $state = $this->getUserState(Auth::user()->id);
+        $state = $this->checkDateChange($state, $now);
+        switch ($action) {
+            case 'start_work':
+                $this->startWork($state, $now);
+                break;
+            case 'end_work':
+                $this->endWork($state, $now);
+                break;
+            case 'start_rest':
+                $this->startRest($state, $now);
+                break;
+            case 'end_rest':
+                $this->endRest($state, $now);
+                break;
         }
+        return redirect('/');
     }
 
     /* 日付一覧表示 */
@@ -236,6 +232,9 @@ class AtteController extends Controller
         $user = User::find($request->input('user_id'));
         if ( isset($user) ){
             session(['user_name' => $user->name]);
+        }
+        else {
+            session(['user_name' => Auth::user()->name]);
         }
         $attendances = $this->getTimeWorkedTableEachUser($request->input('user_id'))->Paginate(5);
         return view('user_attendance', compact('attendances'));
