@@ -10,6 +10,27 @@ use DateTime;
 
 class AtteController extends Controller
 {
+    /* 日付またぎ対応処理(スケジューラから呼ばれる) */
+    public function onDateChange()
+    {
+        $today = new DateTime();
+        $start_time = new DateTime($today->format('Y-m-d'.' 00:00:00'));
+        $yesterday = clone $today;
+        $yesterday->modify('-1 days');
+        $end_time = new DateTime($yesterday->format('Y-m-d').' 23:59:59');
+        
+        $ongoing_attendances = Attendance::OngoingSearch()->get();
+        foreach( $ongoing_attendances as $attendance) {
+            Attendance::find($attendance->id)->update(['end_time' => $end_time]);
+            Attendance::addAttendance($attendance->user_id, $start_time);
+        }
+        
+        $ongoing_rests = Rest::OngoingSearch()->get();
+        foreach( $ongoing_rests as $rest) {
+            Rest::find($rest->id)->update(['end_time' => $end_time]);
+            Rest::addRest($rest->attendance_id, $start_time);
+        }
+    }
 
     /* ユーザの状態を取得する関数 */
     private function getUserState($user_id)
@@ -51,34 +72,6 @@ class AtteController extends Controller
         else {
             return False;
         }
-    }
-
-    /* 日付またぎ対応処理 */
-    private function checkDateChange($state, $now)
-    {
-        if('off' != $state['state']) {
-            $attendance = Attendance::find($state['attendance_id']);
-            $start_time = new DateTime($attendance->start_time);
-            while ($this->isAnotherDay($start_time, $now)) {
-                /* stateが変更されるので休憩中か否かを保持 */
-                $is_resting = 'resting' == $state['state'] ? True : False; 
-                /* その日の仕事をいったん終了 */
-                $end_time = new DateTime($start_time->format('Y-m-d').' 23:59:59');
-                $this->endWork($state, $end_time);
-                $state = $this->getUserState($state['user_id']);
-                /* 次の日の仕事を開始 */
-                $start_time = new DateTime($start_time->format('Y-m-d'.' 00:00:00'));
-                $start_time->modify('+1 days');
-                $this->startWork($state, $start_time);
-                $state = $this->getUserState($state['user_id']);
-                /* 休憩中だった場合は休憩を開始 */
-                if( $is_resting ) {
-                    $this->startRest($state, $start_time);
-                    $state = $this->getUserState($state['user_id']);
-                }
-            }
-        }
-        return $state;
     }
 
     /* 勤務開始処理 */
@@ -159,8 +152,7 @@ class AtteController extends Controller
     {
         $now = new DateTime();
         $state = $this->getUserState(Auth::user()->id);
-        $state = $this->checkDateChange($state, $now);
-        return view('stamp', ['user_state' => $this->getUserState(Auth::user()->id)['state']]);
+        return view('stamp', ['user_state' => $state['state']]);
     }
 
     /* 打刻処理 */
@@ -169,7 +161,6 @@ class AtteController extends Controller
         $action = isset($request->change_state) ? $request->change_state : '';
         $now = new DateTime();
         $state = $this->getUserState(Auth::user()->id);
-        $state = $this->checkDateChange($state, $now);
         switch ($action) {
             case 'start_work':
                 $this->startWork($state, $now);
