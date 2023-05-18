@@ -64,7 +64,7 @@ webアプリ開発の勉強のため
 * docker-compose-dev.ymlファイルをつかってDockerコンテナを起動。
   > docker-compose -f docker-compose-dev.yml up -d --build  
 * phpコンテナにログインし、composerをインストールする。
-  > docker-compose exec php bash  
+  > docker-compose -f docker-compose-dev.yml exec php bash  
   > composer install  
 * srcフォルダ直下に.env.dev.exampleのコピーを作成する。
   > cp .env.dev.example .env  
@@ -74,6 +74,8 @@ webアプリ開発の勉強のため
   > php artisan key:generate  
 * データベースのマイグレーション(phpコンテナにログインした状態)。
   > php artisan migrate  
+* スケジューラの実行
+  > php artisan schedule:work
 
 ## 本番環境
 EC2(仮想サーバ)とRDS(データベース)をつかった本番環境のセットアップ手順を示します。
@@ -84,7 +86,7 @@ EC2(仮想サーバ)とRDS(データベース)をつかった本番環境のセ�
 * docker-compose-prod.ymlファイルをつかってDockerコンテナを起動。
   > docker-compose -f docker-compose-prod.yml up -d --build  
 * phpコンテナにログインし、composerをインストールする。
-  > docker-compose exec php bash  
+  > docker-compose -f docker-compose-prod.yml exec php bash  
   > composer install  
 * srcフォルダ直下に.env.prod.exampleのコピーを作成する。
   > cp .env.prod.example .env
@@ -103,3 +105,21 @@ EC2(仮想サーバ)とRDS(データベース)をつかった本番環境のセ�
   > php artisan key:generate  
 * データベースのマイグレーション(phpコンテナにログインした状態)。
   > php artisan migrate  
+* スケジューラの実行(phpコンテナにログインした状態)。  
+  ※ ここでの処理はdocker化して自動にする予定。
+  * Cronのインストール。  
+    > apt-get install cron  
+  * Cronの設定ファイルを編集するためにVIエディタをインストール。  
+    > apt-get install vim  
+  * Cronの設定ファイルをVIエディタで開く。
+    > crontab -e  
+  * Cronの設定ファイルに↓のコマンドを追加し、保存して閉じる。
+    > \* * * * * cd (プロジェクトのフルパス(例:/var/www)) && php artisan schedule:run >> /dev/null 2>&1  
+  * Cronを起動。  
+    > service cron start  
+
+    ※ Cronが起動しているかの確認↓  
+      > service cron status  
+
+    ※ crontabの内容の確認↓  
+      > crontab -l  
