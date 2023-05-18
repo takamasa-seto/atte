@@ -222,12 +222,24 @@ class AtteController extends Controller
     {
         $user = User::find($request->input('user_id'));
         if ( isset($user) ){
-            session(['user_name' => $user->name]);
+            $id = $user->id;
+            $name = $user->name;
+        }
+        else if (!session()->has('user_name')){
+            // urlを直打ちしたとき
+            $id = Auth::user()->id;
+            $name = Auth::user()->name;
         }
         else {
-            session(['user_name' => Auth::user()->name]);
+            $id = session('user_id');
+            $name = session('user_name');
         }
-        $attendances = $this->getTimeWorkedTableEachUser($request->input('user_id'))->Paginate(5);
+
+        $attendances = $this->getTimeWorkedTableEachUser($id)->Paginate(5);
+
+        session(['user_id' => $id]);
+        session(['user_name' => $name]);
+
         return view('user_attendance', compact('attendances'));
     }
 }
