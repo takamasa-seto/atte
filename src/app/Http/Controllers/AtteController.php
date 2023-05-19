@@ -22,13 +22,12 @@ class AtteController extends Controller
         $ongoing_attendances = Attendance::OngoingSearch()->get();
         foreach( $ongoing_attendances as $attendance) {
             Attendance::find($attendance->id)->update(['end_time' => $end_time]);
-            Attendance::addAttendance($attendance->user_id, $start_time);
-        }
-        
-        $ongoing_rests = Rest::OngoingSearch()->get();
-        foreach( $ongoing_rests as $rest) {
-            Rest::find($rest->id)->update(['end_time' => $end_time]);
-            Rest::addRest($rest->attendance_id, $start_time);
+            $added_attendance = Attendance::addAttendance($attendance->user_id, $start_time);
+            $ongoing_rests = Rest::AttendanceSearch($attendance->id)->OngoingSearch()->get();
+            foreach( $ongoing_rests as $rest) {
+                Rest::find($rest->id)->update(['end_time' => $end_time]);
+                Rest::addRest($added_attendance->id, $start_time);
+            }
         }
     }
 

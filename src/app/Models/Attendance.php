@@ -48,7 +48,7 @@ class Attendance extends Model
                 'start_time' => $start_time,
                 'end_time' => $end_time
             );
-            Attendance::create($tmp_attendance);
+            return Attendance::create($tmp_attendance);
         }
     }
 

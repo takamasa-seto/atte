@@ -40,7 +40,7 @@ class Rest extends Model
                 'start_time' => $start_time,
                 'end_time' => $end_time
             );
-            Rest::create($tmp_rest);
+            return Rest::create($tmp_rest);
         }
     }
 
